@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>感情タイプ診断（改良版）</title>
+<style>
+  :root{
+    --font-main: "Hiragino Kaku Gothic ProN", "Arial", sans-serif;
+    --pos-bg-1: #fff7d6;
+    --pos-bg-2: #ffd1dc;
+    --neg-bg-1: #2b2b3a;
+    --neg-bg-2: #3b1f5a;
+    --card-bg: rgba(255,255,255,0.95);
+    --accent-pos: #ff8da1;
+    --accent-neg: #7b8cff;
+    --btn-color: #ffb366;
+    --btn-color-2: #6ec6ff;
+  }
+
+  /* 全体 */
+  html,body{
+    height:100%;
+    margin:0;
+    font-family:var(--font-main);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    color:#111;
+    background: linear-gradient(135deg,var(--pos-bg-1),var(--pos-bg-2));
+    transition: background 400ms ease;
+  }
+  body.negative{
+    background: linear-gradient(135deg,var(--neg-bg-1),var(--neg-bg-2));
+    color: #f4f6ff;
+  }
+
+  .wrap{
+    max-width:740px;
+    margin:24px auto;
+    padding:20px;
+  }
+
+  header{
+    text-align:center;
+    margin-bottom:14px;
+  }
+  h1{
+    margin:0;
+    font-size:1.9rem;
+    letter-spacing:0.02em;
+  }
+  p.lead{
+    margin:8px 0 0;
+    font-size:1rem;
+    opacity:0.9;
+  }
+
+  /* カード */
+  .card{
+    background: var(--card-bg);
+    border-radius:14px;
+    padding:20px;
+    box-shadow: 0 8px 28px rgba(0,0,0,0.12);
+    margin:16px 0;
+  }
+  body.negative .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+  }
+
+  /* 質問テキスト */
+  .q-text{
+    font-size:1.25rem;
+    font-weight:600;
+    margin-bottom:12px;
+  }
+
+  /* ボタン */
+  .btn-row{ display:flex; flex-direction:column; gap:12px; align-items:center; }
+  .btn{
+    width:100%;
+    max-width:420px;
+    padding:14px 18px;
+    font-size:1.15rem;
+    border-radius:12px;
+    border:none;
+    cursor:pointer;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  }
+  .btn:active{ transform: translateY(2px); }
+
+  /* カラーバリエーション */
+  .btn.pos { background: linear-gradient(90deg,var(--accent-pos),var(--btn-color)); color:#fff; }
+  .btn.pos:hover{ box-shadow:0 10px 26px rgba(255,140,140,0.25); }
+
+  .btn.neg { background: linear-gradient(90deg,var(--btn-color-2),var(--accent-neg)); color:#fff; }
+  .btn.neg:hover{ box-shadow:0 10px 26px rgba(120,150,255,0.18); }
+
+  .btn.secondary{ background:transparent; border:2px solid rgba(0,0,0,0.06); }
+  body.negative .btn.secondary{ border:2px solid rgba(255,255,255,0.06); color:inherit; }
+
+  /* 結果表示 */
+  #result {
+    display:none;
+    text-align:left;
+    font-size:1.05rem;
+    line-height:1.7;
+  }
+  #result h2{
+    margin:0 0 6px 0;
+    font-size:1.4rem;
+  }
+  .meta{
+    margin-top:8px;
+    font-size:0.95rem;
+    opacity:0.95;
+  }
+
+  /* もう一度ボタン */
+  #restart{
+    margin-top:16px;
+    display:inline-block;
+    padding:12px 18px;
+    font-size:1rem;
+    border-radius:10px;
+    border:none;
+    cursor:pointer;
+  }
+  #restart.pos { background:#fff6e8; color:#ff6b6b; }
+  #restart.neg { background:#2b2b4a; color:#e6e9ff; }
+
+  /* レスポンシブ */
+  @media (min-width:800px){
+    .btn-row{ flex-direction:row; justify-content:center; }
+    .btn{ width:45%; max-width:320px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>感情タイプ診断</h1>
+    <p class="lead">今の気持ちを選ぶだけで、作ると良い曲の方向性をやさしく教えるよ</p>
+  </header>
+
+  <!-- Q1 -->
+  <div id="q1" class="card">
+    <div class="q-text">今の感情はどっちに近い？</div>
+    <div class="btn-row">
+      <button class="btn pos" onclick="chooseQ1('positive')">ポジティブ</button>
+      <button class="btn neg" onclick="chooseQ1('negative')">ネガティブ</button>
+    </div>
+  </div>
+
+  <!-- Q2 positive -->
+  <div id="q2-positive" class="card" style="display:none;">
+    <div class="q-text">今の感情はどれに近い？</div>
+    <div class="btn-row">
+      <button class="btn pos" onclick="showResult('喜び')">喜び</button>
+      <button class="btn pos" onclick="showResult('自然')">自然</button>
+      <button class="btn pos" onclick="showResult('安心')">安心</button>
+      <button class="btn pos" onclick="showResult('感動')">感動</button>
+    </div>
+  </div>
+
+  <!-- Q2 negative -->
+  <div id="q2-negative" class="card" style="display:none;">
+    <div class="q-text">今の感情はどれに近い？</div>
+    <div class="btn-row">
+      <button class="btn neg" onclick="showResult('悲しみ')">悲しみ</button>
+      <button class="btn neg" onclick="showResult('怒り')">怒り</button>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="result" class="card" aria-live="polite"></div>
+
+  <div style="text-align:center;">
+    <button id="restart" style="display:none;" onclick="restart()">もう一度やる</button>
+  </div>
+</div>
+
+<script>
+  // データ
+  const resultData = {
+    "喜び": {
+      title: "喜び",
+      text: "今の気持ちは「喜び」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：長調\n🎧 BPM：110〜140\n🎹 楽器：メジャーキー、ピアノ、ドラム、弦楽器\n✨ その他：高音域が多め"
+    },
+    "自然": {
+      title: "自然",
+      text: "今の気持ちは「自然」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：長調\n🎧 BPM：60〜100\n🎸 楽器：アコースティックギター、ピアノ、管楽器\n✨ その他：変化緩やか"
+    },
+    "安心": {
+      title: "安心",
+      text: "今の気持ちは「安心」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：長調\n🎧 BPM：70〜90\n🎹 楽器：ピアノ、管楽器\n✨ その他：低音域が多め"
+    },
+    "感動": {
+      title: "感動",
+      text: "今の気持ちは「感動」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：長調・短調\n🎧 BPM：100〜120\n🎹 楽器：ピアノ、管楽器\n✨ その他：緩から強展開に"
+    },
+    "悲しみ": {
+      title: "悲しみ",
+      text: "今の気持ちは「悲しみ」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：短調\n🎧 BPM：60〜80\n🎹 楽器：ピアノ、管楽器、弦楽器\n✨ その他：ピアノをメインに"
+    },
+    "怒り": {
+      title: "怒り",
+      text: "今の気持ちは「怒り」に近いですね。\nこんな曲が合うかもしれません。",
+      detail: "🎼 調：短調\n🎧 BPM：140〜\n🎸 楽器：エレキギター、打楽器\n✨ その他：楽器数多めに"
+    }
+  };
+
+  // Q1選択
+  function chooseQ1(type){
+    // 背景クラス切替
+    if(type === 'positive'){
+      document.body.classList.remove('negative');
+      // show positive q2
+      document.getElementById('q1').style.display = 'none';
+      document.getElementById('q2-positive').style.display = 'block';
+      document.getElementById('q2-negative').style.display = 'none';
+      // adjust restart button style in case shown later
+      document.getElementById('restart').className = 'pos';
+      document.getElementById('restart').style.display = 'none';
+      // ensure buttons look pos
+      setBtnMode('pos');
+    } else {
+      document.body.classList.add('negative');
+      document.getElementById('q1').style.display = 'none';
+      document.getElementById('q2-positive').style.display = 'none';
+      document.getElementById('q2-negative').style.display = 'block';
+      document.getElementById('restart').className = 'neg';
+      document.getElementById('restart').style.display = 'none';
+      setBtnMode('neg');
+    }
+    // scroll top for small screens
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  // 結果表示
+  function showResult(type){
+    // hide questions
+    document.getElementById('q2-positive').style.display = 'none';
+    document.getElementById('q2-negative').style.display = 'none';
+
+    // fill result
+    const r = resultData[type];
+    const resultDiv = document.getElementById('result');
+
+    // build HTML with larger text and line breaks
+    const html = `
+      <h2 style="margin-bottom:8px;">✨ ${r.title} ✨</h2>
+      <p style="font-size:1.05rem; margin:0 0 10px; white-space:pre-line;">${r.text}</p>
+      <div class="meta" style="white-space:pre-line; font-family:inherit;">${r.detail}</div>
+    `;
+    resultDiv.innerHTML = html;
+    resultDiv.style.display = 'block';
+
+    // show restart
+    const btn = document.getElementById('restart');
+    btn.style.display = 'inline-block';
+
+    // set body class (already set on q1), but ensure colors for restart
+    if(['喜び','自然','安心','感動'].includes(type)){
+      document.body.classList.remove('negative');
+      btn.className = 'pos';
+    } else {
+      document.body.classList.add('negative');
+      btn.className = 'neg';
+    }
+
+    // scroll into view
+    setTimeout(()=> { resultDiv.scrollIntoView({behavior:'smooth'}); }, 100);
+  }
+
+  function restart(){
+    // reset views
+    document.getElementById('q1').style.display = 'block';
+    document.getElementById('q2-positive').style.display = 'none';
+    document.getElementById('q2-negative').style.display = 'none';
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('restart').style.display = 'none';
+    document.body.classList.remove('negative');
+    window.scrollTo({top:0,behavior:'smooth'});
+    setBtnMode(null);
+  }
+
+  // 見た目調整用（ボタンの色クラスを切替）
+  function setBtnMode(mode){
+    const posBtns = document.querySelectorAll('.btn.pos');
+    const negBtns = document.querySelectorAll('.btn.neg');
+    if(mode === 'pos'){
+      posBtns.forEach(b=> b.style.boxShadow = '0 10px 26px rgba(255,140,140,0.2)');
+      negBtns.forEach(b=> b.style.boxShadow = '');
+    } else if(mode === 'neg'){
+      negBtns.forEach(b=> b.style.boxShadow = '0 10px 26px rgba(120,150,255,0.18)');
+      posBtns.forEach(b=> b.style.boxShadow = '');
+    } else {
+      posBtns.forEach(b=> b.style.boxShadow = '');
+      negBtns.forEach(b=> b.style.boxShadow = '');
+    }
+  }
+</script>
+</body>
+</html>
